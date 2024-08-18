@@ -1,0 +1,6 @@
+@Sample1_HostAddress = http://localhost:5065
+
+GET {{Sample1_HostAddress}}/SimpleWorkflow/
+Accept: application/json
+
+###

@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GvatarWorkflow", "src\GvatarWorkflow\GvatarWorkflow.csproj", "{F1A8B459-BBB8-4577-8104-6593A81E2041}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sample1", "src\Sample1\Sample1.csproj", "{86C23E22-8DE6-4222-9287-B56611052383}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{6C79000A-6598-4811-9179-63B7ABF24A77}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{C7A63CB7-451B-4069-9C5C-168C3BBA11C0}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{E4253D74-954F-4191-B086-51C211813006}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F1A8B459-BBB8-4577-8104-6593A81E2041}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F1A8B459-BBB8-4577-8104-6593A81E2041}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F1A8B459-BBB8-4577-8104-6593A81E2041}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F1A8B459-BBB8-4577-8104-6593A81E2041}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86C23E22-8DE6-4222-9287-B56611052383}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86C23E22-8DE6-4222-9287-B56611052383}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86C23E22-8DE6-4222-9287-B56611052383}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86C23E22-8DE6-4222-9287-B56611052383}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F1A8B459-BBB8-4577-8104-6593A81E2041} = {6C79000A-6598-4811-9179-63B7ABF24A77}
+		{86C23E22-8DE6-4222-9287-B56611052383} = {6C79000A-6598-4811-9179-63B7ABF24A77}
+	EndGlobalSection
+EndGlobal
