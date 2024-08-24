@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using GvatarWorkflow.Entities.Interfaces;
+using System.Reflection;
 
 namespace GvatarWorkflow.Context;
 
@@ -10,7 +11,7 @@ public class DelegateContext
     {
         Assembly? currentAssembly = Assembly.GetEntryAssembly();
         _types = currentAssembly?.GetTypes()
-                                .Where(type => type.Name.Contains("Delegate") && type.IsClass);
+                                .Where(type => typeof(IDelegate).IsAssignableFrom(type) && type.IsClass);
     }
 
     public object? InvokeDelegate(string delegateName)

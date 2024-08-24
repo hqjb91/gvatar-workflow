@@ -8,6 +8,7 @@ public class Step : IStep
     public string FunctionDelegateName { get; set; } = "";
     public List<string>? ChildrenSteps { get; set; } = [];
     public Func<object?, bool>? Condition { get; set; } = (_) => true;
+    public (string, Func<object?, bool>)? WaitFor { get; set; }
     public bool ShouldRun()
     {
         return Condition is not null && Condition(null);

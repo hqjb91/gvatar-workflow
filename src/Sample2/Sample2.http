@@ -1,0 +1,9 @@
+@Sample2_HostAddress = http://localhost:5209
+
+GET {{Sample2_HostAddress}}/SimpleWorkflow/ExecuteSimpleWorkflow
+Accept: application/json
+
+GET {{Sample2_HostAddress}}/SimpleWorkflow/TriggerEvent
+Accept: application/json
+
+###

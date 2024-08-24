@@ -14,10 +14,12 @@ public class WorkflowService(IPersistenceProvider persistenceProvider, IQueuePro
         await StartWorkflowInstance(workflowDefinition, null);
     }
 
-    public async Task StartWorkflowInstance(WorkflowDefinition workflowDefinition, object? input)
+    public async Task<Guid> StartWorkflowInstance(WorkflowDefinition workflowDefinition, object? input)
     {
         Guid createdWorkflowId = await _persistenceProvider.CreateNewWorkflowInstance(workflowDefinition, input);
         await QueueWorkflowInstance(createdWorkflowId);
+
+        return createdWorkflowId;
     }
 
     public async Task<WorkflowInstance> GetWorkflowInstanceById(Guid workflowInstanceId)
