@@ -12,8 +12,9 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
 
     public async Task ExecuteWorkflowInstance(Guid workflowInstanceId)
     {
-    WorkflowInstance currentWorkflowInstance = await _persistenceProvider.GetWorkflowInstanceById(workflowInstanceId);
+        WorkflowInstance currentWorkflowInstance = await _persistenceProvider.GetWorkflowInstanceById(workflowInstanceId);
         currentWorkflowInstance.Status = "In Progress";
+        await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
 
         while (currentWorkflowInstance.NextPendingStepNames.Count > 0)
         {
@@ -27,6 +28,7 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
                 {
                     currentWorkflowInstance.TaskCompletionSource = new TaskCompletionSource<bool>();
                     currentWorkflowInstance.EventTriggerName = step.WaitFor?.Item1;
+                    await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
                     await currentWorkflowInstance.TaskCompletionSource.Task; // Waits for this task to complete before continuing
                     step.WaitFor?.Item2.Invoke(currentWorkflowInstance.CurrentStepObjectContext);
                 }
@@ -41,10 +43,13 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
                     currentWorkflowInstance.NextPendingStepNames.AddRange(step.ChildrenSteps);
                     currentWorkflowInstance.NextPendingStepNames = currentWorkflowInstance.NextPendingStepNames.Distinct().ToList();
                 }
+
+                await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
             }
         }
 
         currentWorkflowInstance.Status = "Completed";
+        await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
     }
 
     public Task ContinueWorkflowInstance(WorkflowInstance workflowInstance, string eventTriggerName)
