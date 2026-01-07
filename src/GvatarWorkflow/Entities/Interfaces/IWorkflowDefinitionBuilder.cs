@@ -6,5 +6,6 @@ public interface IWorkflowDefinitionBuilder
     public IWorkflowDefinitionBuilder AddDescription(string description);
     public IWorkflowDefinitionBuilder AddVersion(int version);
     public IWorkflowDefinitionBuilder AddName(string name);
+    public IWorkflowDefinitionBuilder AddId(Guid id);
     public WorkflowDefinition Build();
 }

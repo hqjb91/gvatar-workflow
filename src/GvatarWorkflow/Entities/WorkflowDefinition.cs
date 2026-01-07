@@ -14,6 +14,7 @@ public class WorkflowDefinition
 public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
 {
     private readonly WorkflowDefinition _workflowDefinition = new();
+    private Guid? _workflowId;
 
     public IWorkflowDefinitionBuilder AddDescription(string description)
     {
@@ -39,10 +40,15 @@ public class WorkflowDefinitionBuilder : IWorkflowDefinitionBuilder
         return this;
     }
 
+    public IWorkflowDefinitionBuilder AddId(Guid id)
+    {
+        _workflowId = id;
+        return this;
+    }
+
     public WorkflowDefinition Build()
     {
-        Guid guid = new();
-        _workflowDefinition.Id = guid;
+        _workflowDefinition.Id = _workflowId ?? Guid.NewGuid();
         return _workflowDefinition;
     }
 }
