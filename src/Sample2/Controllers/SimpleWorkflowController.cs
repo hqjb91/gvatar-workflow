@@ -23,7 +23,6 @@ public class SimpleWorkflowController(ILogger<SimpleWorkflowController> logger, 
         {
             Name = "Step1",
             FunctionDelegateName = "HelloWorldDelegate",
-            ChildrenSteps = ["Step2a", "Step2b"],
             Condition = null,
             WaitFor = null
         };
@@ -32,7 +31,6 @@ public class SimpleWorkflowController(ILogger<SimpleWorkflowController> logger, 
         {
             Name = "Step2a",
             FunctionDelegateName = "MiddleDelegate",
-            ChildrenSteps = ["Step3"],
             Condition = null,
             WaitFor = ("event1", (_) => {
                 Console.WriteLine("event1 completed");
@@ -44,7 +42,6 @@ public class SimpleWorkflowController(ILogger<SimpleWorkflowController> logger, 
         {
             Name = "Step2b",
             FunctionDelegateName = "MiddleDelegate2",
-            ChildrenSteps = ["Step3"],
             Condition = (input) => ((int?)input > 1),
             WaitFor = null
         };
@@ -57,6 +54,10 @@ public class SimpleWorkflowController(ILogger<SimpleWorkflowController> logger, 
             Condition = null,
             WaitFor = null
         };
+
+        step1.ChildrenSteps = [step2a.Id, step2b.Id];
+        step2a.ChildrenSteps = [step3.Id];
+        step2b.ChildrenSteps = [step3.Id];
 
         WorkflowDefinition simpleWorkflowDefinition =
             _workflowDefinitionBuilder
