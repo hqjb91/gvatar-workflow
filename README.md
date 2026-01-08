@@ -22,6 +22,8 @@ It is a **work in progress**.
   - **Providers**: Persistence and queue providers.
   - **Services**: Core services for workflow execution.
 - **Sample1**: Sample ASP.NET Core project demonstrating how to use the workflow engine.
+- **Sample2**: Sample ASP.NET Core project demonstrating event-triggered workflows.
+- **Sample3**: Sample ASP.NET Core project demonstrating EF Core persistence with the in-memory provider.
 
 ## Getting Started
 
