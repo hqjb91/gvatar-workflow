@@ -19,7 +19,7 @@ public sealed class WorkflowInstanceRecord
     public string Status { get; set; } = "";
     public string? CurrentStepObjectContextJson { get; set; }
     public string? CurrentStepObjectContextType { get; set; }
-    public string PreviousCompletedStepNamesJson { get; set; } = "[]";
-    public string NextPendingStepNamesJson { get; set; } = "[]";
+    public string PreviousCompletedStepIdsJson { get; set; } = "[]";
+    public string NextPendingStepIdsJson { get; set; } = "[]";
     public string WorkflowDefinitionJson { get; set; } = "";
 }
