@@ -17,11 +17,15 @@ public class SingletonInMemoryPersistenceProvider : IPersistenceProvider
             Guid newGuid = Guid.NewGuid();
             WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Name], null, workflowDefinition)
             {
-                Id = newGuid,
-                CurrentStepObjectContext = input
-            };
-            _instances.Add(newWorkflowInstance);
-            return Task.FromResult(newGuid);
+                Guid newGuid = Guid.NewGuid();
+                WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Id], null, workflowDefinition)
+                {
+                    Id = newGuid,
+                    CurrentStepObjectContext = input
+                };
+                _instances.Add(newWorkflowInstance);
+                return newGuid;
+            });
         }
     }
 
