@@ -24,24 +24,52 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
 
             foreach (Step step in currentStepsToExecute)
             {
+                ActivityInstance activityInstance = new(step.Name)
+                {
+                    Status = "In Progress",
+                    StartedAtUtc = DateTimeOffset.UtcNow,
+                    Attempt = 1
+                };
+                currentWorkflowInstance.ActivityInstances.Add(activityInstance);
+                await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
+
                 if (step.WaitFor is not null)
                 {
                     currentWorkflowInstance.TaskCompletionSource = new TaskCompletionSource<bool>();
                     currentWorkflowInstance.EventTriggerName = step.WaitFor?.Item1;
+                    activityInstance.Status = "Waiting";
+                    activityInstance.WaitingForEvent = step.WaitFor?.Item1;
                     await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
                     await currentWorkflowInstance.TaskCompletionSource.Task; // Waits for this task to complete before continuing
+                    activityInstance.Status = "In Progress";
+                    activityInstance.WaitingForEvent = null;
                     step.WaitFor?.Item2.Invoke(currentWorkflowInstance.CurrentStepObjectContext);
                 }
 
-                var output = _delegateContext.InvokeDelegate(step.FunctionDelegateName, currentWorkflowInstance.CurrentStepObjectContext, step.Condition);
-                currentWorkflowInstance.CurrentStepObjectContext = output;
-                currentWorkflowInstance.PreviousCompletedStepNames.Add(step.Name);
-                currentWorkflowInstance.NextPendingStepNames.Remove(step.Name);
-
-                if (step.ChildrenSteps is not null)
+                try
                 {
-                    currentWorkflowInstance.NextPendingStepNames.AddRange(step.ChildrenSteps);
-                    currentWorkflowInstance.NextPendingStepNames = currentWorkflowInstance.NextPendingStepNames.Distinct().ToList();
+                    var output = _delegateContext.InvokeDelegate(step.FunctionDelegateName, currentWorkflowInstance.CurrentStepObjectContext, step.Condition);
+                    currentWorkflowInstance.CurrentStepObjectContext = output;
+                    currentWorkflowInstance.PreviousCompletedStepNames.Add(step.Name);
+                    currentWorkflowInstance.NextPendingStepNames.Remove(step.Name);
+                    activityInstance.Output = output;
+                    activityInstance.Status = "Completed";
+                    activityInstance.CompletedAtUtc = DateTimeOffset.UtcNow;
+
+                    if (step.ChildrenSteps is not null)
+                    {
+                        currentWorkflowInstance.NextPendingStepNames.AddRange(step.ChildrenSteps);
+                        currentWorkflowInstance.NextPendingStepNames = currentWorkflowInstance.NextPendingStepNames.Distinct().ToList();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    activityInstance.Status = "Failed";
+                    activityInstance.ErrorMessage = ex.Message;
+                    activityInstance.CompletedAtUtc = DateTimeOffset.UtcNow;
+                    currentWorkflowInstance.Status = "Failed";
+                    await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
+                    throw;
                 }
 
                 await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);

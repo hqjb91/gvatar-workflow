@@ -4,7 +4,8 @@ public class WorkflowInstance(
     List<string> previousCompletedStepNames,
     List<string> nextPendingStepNames,
     object? currentStepObjectContext,
-    WorkflowDefinition workflowDefinition
+    WorkflowDefinition workflowDefinition,
+    List<ActivityInstance>? activityInstances = null
     )
 {
     public Guid Id { get; set; }
@@ -13,6 +14,7 @@ public class WorkflowInstance(
     public List<string> NextPendingStepNames { get; set; } = nextPendingStepNames;
     public object? CurrentStepObjectContext { get; set; } = currentStepObjectContext;
     public WorkflowDefinition WorkflowDefinition { get; set; } = workflowDefinition;
+    public List<ActivityInstance> ActivityInstances { get; set; } = activityInstances ?? [];
     public TaskCompletionSource<bool>? TaskCompletionSource { get; set; } = null!;
     public string? EventTriggerName { get; set; } = "";
 }
