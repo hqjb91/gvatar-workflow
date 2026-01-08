@@ -1,5 +1,4 @@
 using GvatarWorkflow.Entities;
-using GvatarWorkflow.Entities.Interfaces;
 using GvatarWorkflow.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,35 +20,73 @@ public class SimpleWorkflowController(ILogger<SimpleWorkflowController> logger, 
         Step step1 = new()
         {
             Name = "Step1",
-            FunctionDelegateName = "HelloWorldDelegate",
-            Condition = null
+            FunctionDelegateName = "HelloWorldDelegate"
         };
 
         Step step2a = new()
         {
             Name = "Step2a",
-            FunctionDelegateName = "MiddleDelegate",
-            Condition = null
+            FunctionDelegateName = "MiddleDelegate"
         };
 
         Step step2b = new()
         {
             Name = "Step2b",
-            FunctionDelegateName = "MiddleDelegate2",
-            Condition = (input) => ((int?)input > 1)
+            FunctionDelegateName = "MiddleDelegate2"
         };
 
         Step step3 = new()
         {
             Name = "Step3",
             FunctionDelegateName = "EndWorkflowDelegate",
-            ChildrenSteps = null,
-            Condition = null
+            Transitions = []
         };
 
-        step1.ChildrenSteps = [step2a.Id, step2b.Id];
-        step2a.ChildrenSteps = [step3.Id];
-        step2b.ChildrenSteps = [step3.Id];
+        step1.Transitions =
+        [
+            new Transition
+            {
+                FromStepId = step1.Id,
+                ToStepId = step2a.Id,
+                Condition = new TransitionCondition
+                {
+                    Type = TransitionConditionType.LessThanOrEqual,
+                    Value = "1"
+                },
+                Order = 1
+            },
+            new Transition
+            {
+                FromStepId = step1.Id,
+                ToStepId = step2b.Id,
+                Condition = new TransitionCondition
+                {
+                    Type = TransitionConditionType.GreaterThan,
+                    Value = "1"
+                },
+                Order = 2
+            }
+        ];
+        step2a.Transitions =
+        [
+            new Transition
+            {
+                FromStepId = step2a.Id,
+                ToStepId = step3.Id,
+                Condition = new TransitionCondition { Type = TransitionConditionType.Always },
+                Order = 1
+            }
+        ];
+        step2b.Transitions =
+        [
+            new Transition
+            {
+                FromStepId = step2b.Id,
+                ToStepId = step3.Id,
+                Condition = new TransitionCondition { Type = TransitionConditionType.Always },
+                Order = 1
+            }
+        ];
 
         WorkflowDefinition simpleWorkflowDefinition =
             _workflowDefinitionBuilder
