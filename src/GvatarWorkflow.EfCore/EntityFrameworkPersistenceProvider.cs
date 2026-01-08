@@ -18,7 +18,7 @@ public sealed class EntityFrameworkPersistenceProvider(WorkflowDbContext dbConte
     public async Task<Guid> CreateNewWorkflowInstance(WorkflowDefinition workflowDefinition, object? input)
     {
         Guid newGuid = Guid.NewGuid();
-        WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Name], input, workflowDefinition)
+        WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Id], input, workflowDefinition)
         {
             Id = newGuid
         };
@@ -74,8 +74,8 @@ public sealed class EntityFrameworkPersistenceProvider(WorkflowDbContext dbConte
             Status = workflowInstance.Status,
             CurrentStepObjectContextJson = SerializeOptional(workflowInstance.CurrentStepObjectContext),
             CurrentStepObjectContextType = workflowInstance.CurrentStepObjectContext?.GetType().AssemblyQualifiedName,
-            PreviousCompletedStepNamesJson = JsonSerializer.Serialize(workflowInstance.PreviousCompletedStepNames, JsonOptions),
-            NextPendingStepNamesJson = JsonSerializer.Serialize(workflowInstance.NextPendingStepNames, JsonOptions),
+            PreviousCompletedStepIdsJson = JsonSerializer.Serialize(workflowInstance.PreviousCompletedStepIds, JsonOptions),
+            NextPendingStepIdsJson = JsonSerializer.Serialize(workflowInstance.NextPendingStepIds, JsonOptions),
             WorkflowDefinitionJson = definitionJson
         };
     }
@@ -85,8 +85,8 @@ public sealed class EntityFrameworkPersistenceProvider(WorkflowDbContext dbConte
         record.Status = workflowInstance.Status;
         record.CurrentStepObjectContextJson = SerializeOptional(workflowInstance.CurrentStepObjectContext);
         record.CurrentStepObjectContextType = workflowInstance.CurrentStepObjectContext?.GetType().AssemblyQualifiedName;
-        record.PreviousCompletedStepNamesJson = JsonSerializer.Serialize(workflowInstance.PreviousCompletedStepNames, JsonOptions);
-        record.NextPendingStepNamesJson = JsonSerializer.Serialize(workflowInstance.NextPendingStepNames, JsonOptions);
+        record.PreviousCompletedStepIdsJson = JsonSerializer.Serialize(workflowInstance.PreviousCompletedStepIds, JsonOptions);
+        record.NextPendingStepIdsJson = JsonSerializer.Serialize(workflowInstance.NextPendingStepIds, JsonOptions);
         record.WorkflowDefinitionJson = JsonSerializer.Serialize(WorkflowDefinitionRecord.FromDefinition(workflowInstance.WorkflowDefinition), JsonOptions);
     }
 
@@ -97,8 +97,8 @@ public sealed class EntityFrameworkPersistenceProvider(WorkflowDbContext dbConte
 
         WorkflowDefinition workflowDefinition = definitionRecord.ToDefinition();
         object? context = DeserializeOptional(record.CurrentStepObjectContextJson, record.CurrentStepObjectContextType);
-        List<string> previous = JsonSerializer.Deserialize<List<string>>(record.PreviousCompletedStepNamesJson, JsonOptions) ?? [];
-        List<string> next = JsonSerializer.Deserialize<List<string>>(record.NextPendingStepNamesJson, JsonOptions) ?? [];
+        List<Guid> previous = JsonSerializer.Deserialize<List<Guid>>(record.PreviousCompletedStepIdsJson, JsonOptions) ?? [];
+        List<Guid> next = JsonSerializer.Deserialize<List<Guid>>(record.NextPendingStepIdsJson, JsonOptions) ?? [];
 
         return new WorkflowInstance(record.Status, previous, next, context, workflowDefinition)
         {

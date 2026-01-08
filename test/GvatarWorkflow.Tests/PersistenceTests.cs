@@ -46,7 +46,7 @@ public class PersistenceTests
         WorkflowInstance instance = await persistenceProvider.GetWorkflowInstanceById(workflowInstanceId);
 
         Assert.Equal("Completed", instance.Status);
-        Assert.Contains("Step1", instance.PreviousCompletedStepNames);
+        Assert.Contains(workflowDefinition.Steps[0].Id, instance.PreviousCompletedStepIds);
         Assert.True(persistenceProvider.PersistCount >= 2, "Expected workflow updates to be persisted more than once.");
     }
 
@@ -64,7 +64,7 @@ public class PersistenceTests
         public Task<Guid> CreateNewWorkflowInstance(WorkflowDefinition workflowDefinition, object? input)
         {
             Guid newGuid = Guid.NewGuid();
-            WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Name], input, workflowDefinition)
+            WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Id], input, workflowDefinition)
             {
                 Id = newGuid
             };
