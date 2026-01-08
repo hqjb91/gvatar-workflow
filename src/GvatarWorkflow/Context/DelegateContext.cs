@@ -1,5 +1,7 @@
 ﻿using GvatarWorkflow.Entities.Interfaces;
 using System.Reflection;
+using System;
+using System.Linq;
 
 namespace GvatarWorkflow.Context;
 
@@ -9,9 +11,9 @@ public class DelegateContext
 
     public void InitialPopulationOfAssemblyTypes()
     {
-        Assembly? currentAssembly = Assembly.GetEntryAssembly();
-        _types = currentAssembly?.GetTypes()
-                                .Where(type => typeof(IDelegate).IsAssignableFrom(type) && type.IsClass);
+        _types = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(GetLoadableTypes)
+            .Where(type => typeof(IDelegate).IsAssignableFrom(type) && type is { IsClass: true, IsAbstract: false });
     }
 
     public object? InvokeDelegate(string delegateName)
@@ -36,5 +38,17 @@ public class DelegateContext
         }
 
         return input;
+    }
+
+    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            return ex.Types.Where(type => type is not null)!;
+        }
     }
 }

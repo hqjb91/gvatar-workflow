@@ -26,11 +26,14 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
             {
                 if (step.WaitFor is not null)
                 {
+                    currentWorkflowInstance.Status = "Waiting";
                     currentWorkflowInstance.TaskCompletionSource = new TaskCompletionSource<bool>();
                     currentWorkflowInstance.EventTriggerName = step.WaitFor?.Item1;
                     await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
                     await currentWorkflowInstance.TaskCompletionSource.Task; // Waits for this task to complete before continuing
                     step.WaitFor?.Item2.Invoke(currentWorkflowInstance.CurrentStepObjectContext);
+                    currentWorkflowInstance.Status = "In Progress";
+                    await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
                 }
 
                 var output = _delegateContext.InvokeDelegate(step.FunctionDelegateName, currentWorkflowInstance.CurrentStepObjectContext, step.Condition);
