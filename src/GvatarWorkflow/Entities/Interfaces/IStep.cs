@@ -2,5 +2,5 @@
 
 public interface IStep
 {
-    public bool ShouldRun();
+    public bool ShouldRun(object? input);
 }
