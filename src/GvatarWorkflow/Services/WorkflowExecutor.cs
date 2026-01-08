@@ -16,15 +16,15 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
         currentWorkflowInstance.Status = "In Progress";
         await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
 
-        while (currentWorkflowInstance.NextPendingStepNames.Count > 0)
+        while (currentWorkflowInstance.NextPendingStepIds.Count > 0)
         {
             List<Step> currentStepsToExecute = currentWorkflowInstance.WorkflowDefinition.Steps
-                .Where(step => currentWorkflowInstance.NextPendingStepNames.Contains(step.Name))
+                .Where(step => currentWorkflowInstance.NextPendingStepIds.Contains(step.Id))
                 .ToList();
 
             foreach (Step step in currentStepsToExecute)
             {
-                ActivityInstance activityInstance = new(step.Name)
+                ActivityInstance activityInstance = new(step.Id, step.Name)
                 {
                     Status = "In Progress",
                     StartedAtUtc = DateTimeOffset.UtcNow,
@@ -50,16 +50,16 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
                 {
                     var output = _delegateContext.InvokeDelegate(step.FunctionDelegateName, currentWorkflowInstance.CurrentStepObjectContext, step.Condition);
                     currentWorkflowInstance.CurrentStepObjectContext = output;
-                    currentWorkflowInstance.PreviousCompletedStepNames.Add(step.Name);
-                    currentWorkflowInstance.NextPendingStepNames.Remove(step.Name);
+                    currentWorkflowInstance.PreviousCompletedStepIds.Add(step.Id);
+                    currentWorkflowInstance.NextPendingStepIds.Remove(step.Id);
                     activityInstance.Output = output;
                     activityInstance.Status = "Completed";
                     activityInstance.CompletedAtUtc = DateTimeOffset.UtcNow;
 
                     if (step.ChildrenSteps is not null)
                     {
-                        currentWorkflowInstance.NextPendingStepNames.AddRange(step.ChildrenSteps);
-                        currentWorkflowInstance.NextPendingStepNames = currentWorkflowInstance.NextPendingStepNames.Distinct().ToList();
+                        currentWorkflowInstance.NextPendingStepIds.AddRange(step.ChildrenSteps);
+                        currentWorkflowInstance.NextPendingStepIds = currentWorkflowInstance.NextPendingStepIds.Distinct().ToList();
                     }
                 }
                 catch (Exception ex)

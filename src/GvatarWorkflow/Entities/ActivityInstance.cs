@@ -1,8 +1,9 @@
 namespace GvatarWorkflow.Entities;
 
-public class ActivityInstance(string stepName)
+public class ActivityInstance(Guid stepId, string stepName)
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid StepId { get; set; } = stepId;
     public string StepName { get; set; } = stepName;
     public string Status { get; set; } = "Pending";
     public int Attempt { get; set; } = 0;

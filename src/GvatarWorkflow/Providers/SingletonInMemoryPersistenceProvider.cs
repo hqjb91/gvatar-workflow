@@ -17,7 +17,7 @@ public class SingletonInMemoryPersistenceProvider : IPersistenceProvider
             return Task.Run(() =>
             {
                 Guid newGuid = Guid.NewGuid();
-                WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Name], null, workflowDefinition)
+                WorkflowInstance newWorkflowInstance = new("New", [], [workflowDefinition.Steps[0].Id], null, workflowDefinition)
                 {
                     Id = newGuid,
                     CurrentStepObjectContext = input
