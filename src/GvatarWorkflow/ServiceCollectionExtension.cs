@@ -16,8 +16,8 @@ public static class ServiceCollectionExtension
         WorkflowOptions options = new(services);
         configureActions?.Invoke(options);
 
-        services.AddSingleton<IWorkflowService, WorkflowService>();
-        services.AddSingleton<IWorkflowExecutor, WorkflowExecutor>();
+        services.AddScoped<IWorkflowService, WorkflowService>();
+        services.AddScoped<IWorkflowExecutor, WorkflowExecutor>();
         services.AddScoped<IWorkflowDefinitionBuilder, WorkflowDefinitionBuilder>();
         services.AddSingleton<SingletonInMemoryPersistenceProvider>();
         services.AddSingleton<SingletonInMemoryWorkflowEventStore>();
