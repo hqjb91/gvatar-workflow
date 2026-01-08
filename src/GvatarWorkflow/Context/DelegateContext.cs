@@ -28,11 +28,20 @@ public class DelegateContext
 
     public object? InvokeDelegate(string delegateName, object? input, Func<object?, bool>? condition)
     {
+        if (_types is null)
+        {
+            throw new InvalidOperationException("DelegateContext has not been initialized. Call InitialPopulationOfAssemblyTypes first.");
+        }
+
         if (condition == null || condition(input))
         {
-            Type? delegateToInvoke = _types?
-                                    .Where(type => type.Name == delegateName).First();
-            object? delegateInstance = (delegateToInvoke is not null) ? Activator.CreateInstance(delegateToInvoke) : null;
+            Type? delegateToInvoke = _types.FirstOrDefault(type => type.Name == delegateName);
+            if (delegateToInvoke is null)
+            {
+                throw new InvalidOperationException($"Delegate '{delegateName}' was not found. Ensure it is loaded and implements {nameof(IDelegate)}.");
+            }
+
+            object? delegateInstance = Activator.CreateInstance(delegateToInvoke);
             MethodInfo? executeMethod = delegateToInvoke?.GetMethod("Execute");
             return executeMethod?.Invoke(delegateInstance, [input]);
         }

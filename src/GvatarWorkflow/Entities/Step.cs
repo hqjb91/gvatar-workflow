@@ -10,8 +10,8 @@ public class Step : IStep
     public List<Guid>? ChildrenSteps { get; set; } = [];
     public Func<object?, bool>? Condition { get; set; } = (_) => true;
     public (string, Func<object?, bool>)? WaitFor { get; set; }
-    public bool ShouldRun()
+    public bool ShouldRun(object? input)
     {
-        return Condition is not null && Condition(null);
+        return Condition is not null && Condition(input);
     }
 }

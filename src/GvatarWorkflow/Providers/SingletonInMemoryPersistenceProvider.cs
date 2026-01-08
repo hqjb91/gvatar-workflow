@@ -21,7 +21,7 @@ public class SingletonInMemoryPersistenceProvider : IPersistenceProvider
                 CurrentStepObjectContext = input
             };
             _instances.Add(newWorkflowInstance);
-            return newGuid;
+            return Task.FromResult(newGuid);
         }
     }
 
