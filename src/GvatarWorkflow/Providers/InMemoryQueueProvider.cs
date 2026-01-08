@@ -1,12 +1,13 @@
 ﻿using GvatarWorkflow.Providers.Interfaces;
 using GvatarWorkflow.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
 
 namespace GvatarWorkflow.Providers;
 
-public class InMemoryQueueProvider(IWorkflowExecutor workflowExecutor) : IQueueProvider
+public class InMemoryQueueProvider(IServiceScopeFactory scopeFactory) : IQueueProvider
 {
-    private readonly IWorkflowExecutor _workflowExecutor = workflowExecutor;
+    private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
     public Dictionary<QueueType, BlockingCollection<Guid>> _queues = new()
     {
         [QueueType.Workflow] = [],
@@ -34,7 +35,9 @@ public class InMemoryQueueProvider(IWorkflowExecutor workflowExecutor) : IQueueP
             {
                 foreach (var job in queue.GetConsumingEnumerable())
                 {
-                    await _workflowExecutor.ExecuteWorkflowInstance(job);
+                    using IServiceScope scope = _scopeFactory.CreateScope();
+                    IWorkflowExecutor workflowExecutor = scope.ServiceProvider.GetRequiredService<IWorkflowExecutor>();
+                    await workflowExecutor.ExecuteWorkflowInstance(job);
                 }
             })
             {
