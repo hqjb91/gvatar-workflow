@@ -81,9 +81,12 @@ public class SimpleWorkflowController(ILogger<SimpleWorkflowController> logger, 
     [HttpGet("TriggerEvent")]
     public async Task TriggerEvent([FromQuery] Guid workflowInstanceId,[FromQuery] string eventTriggerName)
     {
-        WorkflowInstance workflowInstance = await _workflowService.GetWorkflowInstanceById(workflowInstanceId);
-        await _workflowExecutor.ContinueWorkflowInstance(workflowInstance, eventTriggerName);
+        // This endpoint can be called from another process or node to resume a waiting workflow.
+        WorkflowEventKey[] correlationKeys =
+        [
+            new WorkflowEventKey("workflowInstanceId", workflowInstanceId.ToString())
+        ];
 
-        return;
+        await _workflowExecutor.ContinueWorkflowInstance(eventTriggerName, correlationKeys);
     }
 }

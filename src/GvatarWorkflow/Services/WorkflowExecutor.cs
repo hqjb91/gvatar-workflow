@@ -2,13 +2,16 @@
 using GvatarWorkflow.Entities;
 using GvatarWorkflow.Providers.Interfaces;
 using GvatarWorkflow.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace GvatarWorkflow.Services;
 
-public class WorkflowExecutor(IPersistenceProvider persistenceProvider, DelegateContext delegateContext) : IWorkflowExecutor
+public class WorkflowExecutor(IPersistenceProvider persistenceProvider, IWorkflowEventStore workflowEventStore, DelegateContext delegateContext, IServiceProvider serviceProvider) : IWorkflowExecutor
 {
     private readonly IPersistenceProvider _persistenceProvider = persistenceProvider;
+    private readonly IWorkflowEventStore _workflowEventStore = workflowEventStore;
     private readonly DelegateContext _delegateContext = delegateContext;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
 
     public async Task ExecuteWorkflowInstance(Guid workflowInstanceId)
     {
@@ -24,27 +27,56 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
 
             foreach (Step step in currentStepsToExecute)
             {
-                ActivityInstance activityInstance = new(step.Id, step.Name)
+                ActivityInstance? activityInstance = currentWorkflowInstance.ActivityInstances
+                    .FirstOrDefault(instance => instance.StepId == step.Id && instance.Status == "Waiting");
+
+                if (activityInstance is null)
                 {
-                    Status = "In Progress",
-                    StartedAtUtc = DateTimeOffset.UtcNow,
-                    Attempt = 1
-                };
-                currentWorkflowInstance.ActivityInstances.Add(activityInstance);
-                await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
+                    activityInstance = new ActivityInstance(step.Id, step.Name)
+                    {
+                        Status = "In Progress",
+                        StartedAtUtc = DateTimeOffset.UtcNow,
+                        Attempt = 1
+                    };
+                    currentWorkflowInstance.ActivityInstances.Add(activityInstance);
+                    await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
+                }
 
                 if (step.WaitFor is not null)
                 {
-                    currentWorkflowInstance.Status = "Waiting";
-                    currentWorkflowInstance.TaskCompletionSource = new TaskCompletionSource<bool>();
-                    currentWorkflowInstance.EventTriggerName = step.WaitFor?.Item1;
-                    activityInstance.Status = "Waiting";
-                    activityInstance.WaitingForEvent = step.WaitFor?.Item1;
-                    await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
-                    await currentWorkflowInstance.TaskCompletionSource.Task; // Waits for this task to complete before continuing
+                    string eventName = step.WaitFor.Value.Item1;
+                    IReadOnlyCollection<WorkflowEventKey> correlationKeys = BuildCorrelationKeys(currentWorkflowInstance);
+
+                    WorkflowEventWait? existingWait = await _workflowEventStore.GetWaitForStep(currentWorkflowInstance.Id, step.Id);
+                    WorkflowEventWait wait = existingWait ?? new WorkflowEventWait
+                    {
+                        WorkflowInstanceId = currentWorkflowInstance.Id,
+                        StepId = step.Id,
+                        StepName = step.Name,
+                        EventName = eventName,
+                        CorrelationKeys = correlationKeys.ToList()
+                    };
+
+                    if (existingWait is null)
+                    {
+                        await _workflowEventStore.CreateWait(wait);
+                    }
+
+                    WorkflowEventRecord? matchingEvent = await _workflowEventStore.FindMatchingEvent(eventName, wait.CorrelationKeys);
+                    if (matchingEvent is null)
+                    {
+                        currentWorkflowInstance.Status = "Waiting";
+                        activityInstance.Status = "Waiting";
+                        activityInstance.WaitingForEvent = eventName;
+                        await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
+                        return;
+                    }
+
+                    await _workflowEventStore.RemoveEvent(matchingEvent.Id);
+                    await _workflowEventStore.RemoveWait(wait.Id);
                     activityInstance.Status = "In Progress";
                     activityInstance.WaitingForEvent = null;
-                    step.WaitFor?.Item2.Invoke(currentWorkflowInstance.CurrentStepObjectContext);
+                    step.WaitFor.Value.Item2.Invoke(currentWorkflowInstance.CurrentStepObjectContext);
                     currentWorkflowInstance.Status = "In Progress";
                     await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
                 }
@@ -83,21 +115,26 @@ public class WorkflowExecutor(IPersistenceProvider persistenceProvider, Delegate
         await _persistenceProvider.PersistWorkflowInstance(currentWorkflowInstance);
     }
 
-    public Task ContinueWorkflowInstance(WorkflowInstance workflowInstance, string eventTriggerName)
+    public async Task ContinueWorkflowInstance(string eventTriggerName, IReadOnlyCollection<WorkflowEventKey> correlationKeys)
     {
-        Task.Run(() =>
+        WorkflowEventRecord workflowEvent = new()
         {
-            if (workflowInstance.EventTriggerName == eventTriggerName)
-            {
-                Console.WriteLine($"Continuing workflow for event: {eventTriggerName}");
-                workflowInstance.TaskCompletionSource?.TrySetResult(true);
-            }
-            else
-            {
-                Console.WriteLine($"No matching event found for: {eventTriggerName}. Expecting {workflowInstance.EventTriggerName}");
-            }
-        });
+            EventName = eventTriggerName,
+            CorrelationKeys = correlationKeys.ToList()
+        };
 
-        return Task.CompletedTask;
+        await _workflowEventStore.RecordEvent(workflowEvent);
+
+        IReadOnlyList<WorkflowEventWait> waits = await _workflowEventStore.GetWaitsByEvent(eventTriggerName, correlationKeys);
+        IQueueProvider queueProvider = _serviceProvider.GetRequiredService<IQueueProvider>();
+        foreach (WorkflowEventWait wait in waits)
+        {
+            await queueProvider.QueueWork(wait.WorkflowInstanceId, QueueType.Workflow);
+        }
+    }
+
+    private static IReadOnlyCollection<WorkflowEventKey> BuildCorrelationKeys(WorkflowInstance workflowInstance)
+    {
+        return [new WorkflowEventKey("workflowInstanceId", workflowInstance.Id.ToString())];
     }
 }
