@@ -15,6 +15,4 @@ public class WorkflowInstance(
     public object? CurrentStepObjectContext { get; set; } = currentStepObjectContext;
     public WorkflowDefinition WorkflowDefinition { get; set; } = workflowDefinition;
     public List<ActivityInstance> ActivityInstances { get; set; } = activityInstances ?? [];
-    public TaskCompletionSource<bool>? TaskCompletionSource { get; set; } = null!;
-    public string? EventTriggerName { get; set; } = "";
 }

@@ -20,7 +20,9 @@ public static class ServiceCollectionExtension
         services.AddSingleton<IWorkflowExecutor, WorkflowExecutor>();
         services.AddScoped<IWorkflowDefinitionBuilder, WorkflowDefinitionBuilder>();
         services.AddSingleton<SingletonInMemoryPersistenceProvider>();
+        services.AddSingleton<SingletonInMemoryWorkflowEventStore>();
         services.AddTransient<IPersistenceProvider>(options.PersistenceFactory);
+        services.AddTransient<IWorkflowEventStore>(options.EventStoreFactory);
         services.AddSingleton<IQueueProvider>(options.QueueFactory);
         services.AddSingleton<DelegateContext>(serviceProvider =>
         {

@@ -153,6 +153,8 @@ Step step2b = new()
 
 When defining a step we can specify a tuple with the first input being the name of the continue workflow event trigger and the second
 input being a Function delegate will be ran before the continuation of the workflow on the continue workflow event trigger.
+The wait state is persisted, so the workflow can be resumed after a process restart or by a worker running on another node. Correlation
+keys are stored alongside the wait state to ensure the correct workflow instance resumes.
 
 ```csharp
 Step step2a = new()
@@ -168,11 +170,17 @@ Step step2a = new()
 };
 ```
 
-The workflow can be continued by calling the ContinueWorkflowInstance method on the workflow executor with the Workflow Instance and name
-of the continue workflow event trigger passed to it.
+The workflow can be continued by calling the ContinueWorkflowInstance method on the workflow executor with the event name and the
+correlation keys. Because waits/events are durable, the event can be posted from another process or node. By default, the executor
+correlates waits using the workflow instance id.
 
 ```csharp
-await _workflowExecutor.ContinueWorkflowInstance(workflowInstance, eventTriggerName);
+WorkflowEventKey[] correlationKeys =
+[
+    new WorkflowEventKey("workflowInstanceId", workflowInstanceId.ToString())
+];
+
+await _workflowExecutor.ContinueWorkflowInstance(eventTriggerName, correlationKeys);
 ```
 
 ## License
